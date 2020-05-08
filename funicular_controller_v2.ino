@@ -25,26 +25,52 @@
 const int PIN_HALL1 = 2;
 const int PIN_HALL2 = 3;
 
-volatile int counter;
+volatile int hall1;
+volatile int hall2;
 
 // the setup function runs once when you press reset or power the board
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(PIN_HALL1, INPUT_PULLUP);
   pinMode(PIN_HALL2, INPUT_PULLUP);
-//  attachInterrupt(digitalPinToInterrupt(PIN_HALL), isr, FALLING);
+  attachInterrupt(digitalPinToInterrupt(PIN_HALL1), hall1_changed, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(PIN_HALL2), hall2_changed, CHANGE);  
   // initialize serial communication at 9600 bits per second:
   Serial.begin(115200);  
 }
 
-void isr() {
-  counter=counter+1;
+void hall1_changed() {
+  hall1 = digitalRead(PIN_HALL1);
 }
 
+void hall2_changed() {
+  hall2 = digitalRead(PIN_HALL2);
+}
+
+// A vald CW or  CCW move returns 1, invalid returns 0.
+int8_t read_rotary() {
+  static int8_t rot_enc_table[] = {0,1,1,0,1,0,0,1,1,0,0,1,0,1,1,0};
+
+  prevNextCode <<= 2;
+  if (digitalRead(DATA)) prevNextCode |= 0x02;
+  if (digitalRead(CLK)) prevNextCode |= 0x01;
+  prevNextCode &= 0x0f;
+
+   // If valid then store as 16 bit data.
+   if  (rot_enc_table[prevNextCode] ) {
+      store <<= 4;
+      store |= prevNextCode;
+      //if (store==0xd42b) return 1;
+      //if (store==0xe817) return -1;
+      if ((store&0xff)==0x2b) return -1;
+      if ((store&0xff)==0x17) return 1;
+   }
+   return 0;
+}
 // the loop function runs over and over again forever
 void loop() {
-  int hall1 = digitalRead(PIN_HALL1);
-  int hall2 = digitalRead(PIN_HALL2);
+//  int hall1 = digitalRead(PIN_HALL1);
+//  int hall2 = digitalRead(PIN_HALL2);
   Serial.print(hall1);  
   Serial.print(" ");
   Serial.println(hall2);
