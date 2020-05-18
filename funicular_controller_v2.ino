@@ -22,96 +22,33 @@
   http://www.arduino.cc/en/Tutorial/Blink
 */
 
+#include "LegoHallRotEncoder.h"
+
 const int PIN_HALL1 = 2;
 const int PIN_HALL2 = 3;
-const int DATA = PIN_HALL1;
-const int CLK = PIN_HALL2;
 
-volatile int hall1;
-volatile int hall2;
-volatile int prevNextCode;
-
-volatile int counter = 0;
-volatile int dir = 0;
+LegoHallRotEncoder rotEnc = LegoHallRotEncoder(PIN_HALL1, PIN_HALL2);
 
 // the setup function runs once when you press reset or power the board
 void setup() {
-  // initialize digital pin LED_BUILTIN as an output.
-  pinMode(PIN_HALL1, INPUT_PULLUP);
-  pinMode(PIN_HALL2, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(PIN_HALL1), hall1_changed, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(PIN_HALL2), hall2_changed, CHANGE);
-  // initialize serial communication at 9600 bits per second:
   Serial.begin(115200);
 }
 
-void hall1_changed() {
-  noInterrupts();
-  hall1 = digitalRead(PIN_HALL1);
-  dir = read_rotary();
-  counter += dir;
-  interrupts();
-}
-
-void hall2_changed() {
-  noInterrupts();
-  hall2 = digitalRead(PIN_HALL2);
-  dir = read_rotary();
-  counter += dir;
-  interrupts();
-}
-
-// A vald CW or CCW move returns 1, invalid returns 0.
-int8_t read_rotary() {
-  // experimental sequence dir=1: 00 01 11 01 11 10 11 10
-  static int8_t rot_enc_table[255] = {    0    };
-  // dir +1
-  rot_enc_table[B00011101] = 1;
-  rot_enc_table[B01110111] = 1;
-  rot_enc_table[B11011110] = 1;
-  rot_enc_table[B01111011] = 1;
-  rot_enc_table[B11101110] = 1;
-  rot_enc_table[B10111000] = 1;
-  rot_enc_table[B11100001] = 1;
-  rot_enc_table[B10000111] = 1;
-  // dir -1
-  rot_enc_table[B10111011] = -1;
-  rot_enc_table[B11101101] = -1;
-  rot_enc_table[B10110111] = -1;
-  rot_enc_table[B11011101] = -1;
-  rot_enc_table[B01110100] = -1;
-  rot_enc_table[B11010010] = -1;
-  rot_enc_table[B01001011] = -1;
-  rot_enc_table[B00101110] = -1;
-  
-  int prevdir = rot_enc_table[( prevNextCode )];
-  prevNextCode <<= 2;
-  if (digitalRead(DATA)) prevNextCode |= 0x02;
-  if (digitalRead(CLK)) prevNextCode |= 0x01;
-  prevNextCode &= 0xff;
-
-  return ( rot_enc_table[( prevNextCode )]);
-}
 
 // the loop function runs over and over again forever
 void loop() {
-  Serial.print(hall1);
-  Serial.print(" ");
-  Serial.print(hall2);
-  Serial.print(" ");
-  Serial.print(dir);
-  Serial.print(" ");
-  Serial.print(prevNextCode, BIN);
-  Serial.print(" ");
-  Serial.print(prevNextCode);
-  Serial.print(" ");
-  Serial.print(counter);
-  Serial.println("");
+//  rotEnc.printDebug();
+  Serial.print("dir:");
+  Serial.print(rotEnc.dir());
+  Serial.print("counter:");
+  Serial.print(rotEnc.counter());
+  Serial.println();  
 
+  if (rotEnc.counter() > 50) rotEnc.resetCounter();
   //  noInterrupts();
   //  hall_state = counter;
   //  counter = 0;
   //  interrupts();
   //  Serial.println(hall_state);
-  delay(200);                       // wait for a second
+  delay(100);                       // wait a bit
 }
