@@ -22,7 +22,7 @@
   http://www.arduino.cc/en/Tutorial/Blink
 */
 
-#include "LegoHallRotEncoder.h"
+#include <LegoHallRotEncoder.h>
 
 const int PIN_HALL1 = 2;
 const int PIN_HALL2 = 3;
