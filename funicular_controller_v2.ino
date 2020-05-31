@@ -19,8 +19,8 @@
 //#define PN532_MOSI (11)
 #define PN532_SS   (10)
 
-const int PIN_HALL1 = 2;
-const int PIN_HALL2 = 3;
+const int PIN_HALL1 = 4;
+const int PIN_HALL2 = 5;
 
 // Use this line for a breakout with a hardware SPI connection.  Note that
 // the PN532 SCK, MOSI, and MISO pins need to be connected to the Arduino's
@@ -34,8 +34,25 @@ MFRC522 mfrc522(RC522_SS, RC522_RST);
 // create LegoHallRotEncoder
 LegoHallRotEncoder rotEnc = LegoHallRotEncoder(PIN_HALL1, PIN_HALL2);
 
+
+ISR(PCINT2_vect){
+  static byte oldRotEncState = 0x0;
+
+  // see https://arduino.stackexchange.com/a/12958 how to handle pin change interrupts
+  byte newRotEncState = PIND & 0b00110000;  //(bit(4)|bit(5));
+  if (newRotEncState != oldRotEncState) {
+    LegoHallRotEncoder::rotenc_changed();    
+  }
+  oldRotEncState = newRotEncState; 
+}
+
 // the setup function runs once when you press reset or power the board
 void setup() {
+  cli(); // disable interrupts
+  PCICR |= 0b00000100; // turn on pin change irq on port d
+  PCMSK2 |= 0b00110000;    // turn on pins PD4 & PD5, PCINT20 & PCINT21 (=Arduino pins D4, D5)
+  sei(); // reenable interrupts
+  
   Serial.begin(115200);
 
   Serial.println("Init PN532");
