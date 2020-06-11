@@ -8,6 +8,14 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
+#include <L293.h>
+
+// give a name to the pins that we use
+const int speedPin = 6;    // that is the pin that we use to control the motor's speed
+const int forwardPin = 7; // this is the pin that we use to tell the motor to go forward
+const int reversePin = 8; // this is the pin that we use to tell the motor to go reverse
+
+L293 motor( speedPin, forwardPin, reversePin );
 
 // If using the breakout with SPI, define the pins for SPI communication.
 //#define PN532_SCK  (13)
@@ -76,6 +84,8 @@ void setup() {
   sei(); // reenable interrupts
 
   Serial.begin(115200);
+  motor.forceStop(200); // stop the motor
+  
   initRFIDReader(nfc_beforeStation, "BeforeStation", PN532_IRQ);
   initRFIDReader(nfc_inStation, "InStation", PN532_IRQ_2);
 }
@@ -114,7 +124,7 @@ int8_t detectCar(Adafruit_PN532& nfc) { // carid = -1, 0=no car, 1
 
 // the loop function runs over and over again forever
 void loop() {
-//  rotEnc.printDebug();
+  rotEnc.printDebug();
 //  Serial.print("dir:");
 //  Serial.print(rotEnc.dir());
 //  Serial.print("counter:");
