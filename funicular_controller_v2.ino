@@ -6,21 +6,26 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
 #include <Adafruit_PN532.h>
 #include <L293.h>
 #include <LegoHallRotEncoder.h>
+#include <SSD1306Ascii.h>
+#include <SSD1306AsciiAvrI2c.h>
 
 #define DEBUG
 
 /**
     DISPLAY
 */
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+//#define SCREEN_WIDTH 128 // OLED display width, in pixels
+//#define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+//#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+
+SSD1306AsciiAvrI2c display;
+//Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
 
 /**
     Motor
@@ -65,8 +70,6 @@ Adafruit_PN532 nfc_inStation(PN532_SS_2);
 // create LegoHallRotEncoder
 LegoHallRotEncoder rotEnc = LegoHallRotEncoder(PIN_HALL1, PIN_HALL2);
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
 static void nothing(void) {
 }
 
@@ -107,17 +110,21 @@ void initRFIDReader(Adafruit_PN532& rfidReader, String name, uint8_t irq_pin) {
   rfidReader.beginReadPassiveTargetID(PN532_MIFARE_ISO14443A);
 }
 
+static uint32_t time = millis();
+
 // the setup function runs once when you press reset or power the board
 void setup() {
   Serial.begin(115200);
   Serial.println(F("BEGIN"));
 
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3C for 128x32
-    Serial.println(F("SSD1306 allocation failed"));
-    Serial.flush();
-    for (;;); // Don't proceed, loop forever
-  }
-
+  display.begin(&Adafruit128x64, 0x3C);
+//  display.setFont(System5x7);
+//  display.setFont(lcd5x7);
+//  display.setFont(Adafruit5x7);
+//  display.setFont(Iain5x7);
+  display.setFont(Stang5x7);  
+  display.setContrast(255);  
+  display.setLetterSpacing(1);
   motor.forceStop(200); // stop the motor
 
   initRFIDReader(nfc_beforeStation, "BeforeStation", PN532_IRQ);
@@ -130,51 +137,34 @@ void setup() {
   PCMSK2 |= 0b00110000;    // turn on pins PD4 & PD5, PCINT20 & PCINT21 (=Arduino pins D4, D5)
   sei(); // reenable interrupts
 
-//   Show initial display buffer contents on the screen --
-//   the library initializes this with an Adafruit splash screen.
-  display.display();
-  display.setTextSize(1);      // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE, SSD1306_BLACK); // Draw white text
-  display.cp437(true);         // Use full 256 char 'Code Page 437' font
-
   Serial.println(F("setup complete"));
+  time = millis();  
 }
 
-static uint32_t time = millis();
-
 void testprint(int counter, int8_t car_inStation, int8_t car_beforeStation) {
-  display.clearDisplay();
-
-  display.setCursor(0, 0);     // Start at top-left corner
-//  display.println("text-performance test");
-  //  for (int i = 0; i < 255; i++) {
-  ////    display.setCursor(0, 9);
-  ////    display.print("A");
-  //    display.display();
-  //
-  //  }
-  time = millis() - time;
-  display.setCursor(0, 9);
-  display.print(F("loop time:"));
-  display.print(time);
+  uint32_t duration = millis() - time;
+  time = millis();
+  
+  display.setCursor(0, 0);
+  display.print(F("refresh time:"));
+  display.print(duration);
   display.print("ms");
+  display.print(F("   "));
 
-  display.setCursor(0, 18);
+  display.setCursor(0, 1);
   display.print(F("counter:"));
   display.print(counter);
+  display.print(F("  "));
   
-  display.setCursor(0, 27);
+  display.setCursor(0, 2);
   display.print(F("car_inStation:"));
   display.print(car_inStation);
+  display.print(F("  "));
 
-  display.setCursor(0, 36);
+  display.setCursor(0, 3);
   display.print(F("car_beforeStation:"));
   display.print(car_beforeStation);
-
-  display.display();
-
-  time = millis();
-  //  delay(2000);
+  display.print(F("  "));
 }
 
 static byte uid[] = "\0\0\0\0\0\0\0"; // Buffer to store the returned UID
