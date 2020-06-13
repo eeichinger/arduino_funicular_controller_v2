@@ -12,7 +12,7 @@
 #include <SSD1306Ascii.h>
 #include <SSD1306AsciiAvrI2c.h>
 
-#define DEBUG
+//#define DEBUG
 
 /**
     DISPLAY
@@ -118,13 +118,9 @@ void setup() {
   Serial.println(F("BEGIN"));
 
   display.begin(&Adafruit128x64, 0x3C);
-//  display.setFont(System5x7);
-//  display.setFont(lcd5x7);
-//  display.setFont(Adafruit5x7);
-//  display.setFont(Iain5x7);
   display.setFont(Stang5x7);  
   display.setContrast(255);  
-  display.setLetterSpacing(1);
+  display.setLetterSpacing(0);
   motor.forceStop(200); // stop the motor
 
   initRFIDReader(nfc_beforeStation, "BeforeStation", PN532_IRQ);
@@ -138,7 +134,19 @@ void setup() {
   sei(); // reenable interrupts
 
   Serial.println(F("setup complete"));
-  time = millis();  
+  time = millis(); 
+
+  display.setCursor(0, 0);
+  display.print(F("xx   refresh (ms)"));
+
+  display.setCursor(0, 1);
+  display.print(F("xx   counter"));
+  
+  display.setCursor(0, 2);
+  display.print(F("xx   car_inStation"));
+
+  display.setCursor(0, 3);
+  display.print(F("xx   car_beforeStation"));
 }
 
 void testprint(int counter, int8_t car_inStation, int8_t car_beforeStation) {
@@ -146,25 +154,34 @@ void testprint(int counter, int8_t car_inStation, int8_t car_beforeStation) {
   time = millis();
   
   display.setCursor(0, 0);
-  display.print(F("refresh time:"));
   display.print(duration);
-  display.print("ms");
-  display.print(F("   "));
-
+  if (duration<10) {
+    display.print(F("  "));
+  } else if (duration < 100) {
+    display.print(F(" "));    
+  }
   display.setCursor(0, 1);
-  display.print(F("counter:"));
   display.print(counter);
-  display.print(F("  "));
+  if (counter>0) {
+    display.print(F(" "));    
+  }
+  if (abs(counter)<10) {
+    display.print(F("  "));
+  } else if (abs(counter) < 100) {
+    display.print(F(" "));    
+  }
   
   display.setCursor(0, 2);
-  display.print(F("car_inStation:"));
   display.print(car_inStation);
-  display.print(F("  "));
+  if (car_inStation>=0) {
+    display.print(F(" "));        
+  }
 
   display.setCursor(0, 3);
-  display.print(F("car_beforeStation:"));
   display.print(car_beforeStation);
-  display.print(F("  "));
+  if (car_beforeStation>=0) {
+    display.print(F(" "));        
+  }
 }
 
 static byte uid[] = "\0\0\0\0\0\0\0"; // Buffer to store the returned UID
@@ -183,11 +200,6 @@ int8_t detectCar(Adafruit_PN532& nfc) { // carid = -1, 0=no car, 1
     Serial.print(curcar, HEX);
     Serial.println("");
 #endif
-    //    Serial.print(carIds[0][0], HEX);
-    //    Serial.print(carIds[0][1], HEX);
-    //    Serial.print(carIds[1][0], HEX);
-    //    Serial.print(carIds[1][1], HEX);
-    //    Serial.println("");
     if ( carIds[0][0] == curcar || carIds[0][1] == curcar ) {
       car_id = -1;
     }
@@ -203,17 +215,6 @@ int8_t detectCar(Adafruit_PN532& nfc) { // carid = -1, 0=no car, 1
 
 // the loop function runs over and over again forever
 void loop() {
-#ifdef DEBUG
-    rotEnc.printDebug();
-  //  Serial.print("dir:");
-  //  Serial.print(rotEnc.dir());
-  //  Serial.print("counter:");
-  //  Serial.print(rotEnc.counter());
-  //  Serial.println();
-#endif    
-
-  if (rotEnc.counter() > 50) rotEnc.resetCounter();
-
   int8_t car_inStation = detectCar(nfc_inStation);
   if (car_inStation != 0) {
 #ifdef DEBUG
