@@ -12,7 +12,7 @@
 #include <SSD1306Ascii.h>
 #include <SSD1306AsciiAvrI2c.h>
 
-//#define DEBUG
+#define DEBUG
 
 /**
     DISPLAY
@@ -221,6 +221,7 @@ void loop() {
     Serial.print("car inStation:"); Serial.println(car_inStation);
 #endif  
   }
+
   int8_t car_beforeStation = detectCar(nfc_beforeStation);
   if (car_beforeStation != 0) {
 #ifdef DEBUG
