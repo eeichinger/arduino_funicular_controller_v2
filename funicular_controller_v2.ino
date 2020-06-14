@@ -9,8 +9,9 @@
 #include <Adafruit_PN532.h>
 #include <L293.h>
 #include <LegoHallRotEncoder.h>
-#include <SSD1306Ascii.h>
-#include <SSD1306AsciiAvrI2c.h>
+
+#include "display.h"
+#include "nfc.h"
 
 #define DEBUG
 
@@ -18,12 +19,6 @@
   Start/Stop Button
  */
 #define STARTSTOP_BTN A2
-
-/**
-    DISPLAY
-*/
-SSD1306AsciiAvrI2c display;
-
 
 /**
     Motor
@@ -87,29 +82,6 @@ static void myISR() {
   oldRotEncState = newRotEncState;
 }
 
-void initRFIDReader(Adafruit_PN532& rfidReader, String name, uint8_t irq_pin) {
-  Serial.print(F("Init PN532 Reader:")); Serial.println(name);
-  rfidReader.begin();
-  uint32_t versiondata;
-  versiondata = rfidReader.getFirmwareVersion();
-  if (! versiondata) {
-    Serial.print(F("Didn't find PN53x board InStation"));
-    while (1); // halt
-  }
-  // Got ok data, print it out!
-  Serial.print(F("Found chip PN5")); Serial.println((versiondata >> 24) & 0xFF, HEX);
-  Serial.print(F("Firmware ver. ")); Serial.print((versiondata >> 16) & 0xFF, DEC);
-  Serial.print(F(".")); Serial.println((versiondata >> 8) & 0xFF, DEC);
-  // configure board to read RFID tags
-  rfidReader.SAMConfig();
-
-  rfidReader.enableAsync(irq_pin);
-  // start async listening mode
-  rfidReader.beginReadPassiveTargetID(PN532_MIFARE_ISO14443A);
-}
-
-static uint32_t time = millis();
-
 // the setup function runs once when you press reset or power the board
 void setup() {
   pinMode(STARTSTOP_BTN, INPUT_PULLUP);
@@ -117,10 +89,6 @@ void setup() {
   Serial.begin(115200);
   Serial.println(F("BEGIN"));
 
-  display.begin(&Adafruit128x64, 0x3C);
-  display.setFont(Stang5x7);  
-  display.setContrast(255);  
-  display.setLetterSpacing(0);
   motor.forceStop(200); // stop the motor
 
   initRFIDReader(nfc_beforeStation, "BeforeStation", PN532_IRQ);
@@ -133,56 +101,11 @@ void setup() {
   PCMSK2 |= 0b00110000;    // turn on pins PD4 & PD5, PCINT20 & PCINT21 (=Arduino pins D4, D5)
   sei(); // reenable interrupts
 
+  display_init();
+  
   Serial.println(F("setup complete"));
-  time = millis(); 
-
-  display.setCursor(0, 0);
-  display.print(F("xx   refresh (ms)"));
-
-  display.setCursor(0, 1);
-  display.print(F("xx   counter"));
-  
-  display.setCursor(0, 2);
-  display.print(F("xx   car_inStation"));
-
-  display.setCursor(0, 3);
-  display.print(F("xx   car_beforeStation"));
 }
 
-void testprint(int counter, int8_t car_inStation, int8_t car_beforeStation) {
-  uint32_t duration = millis() - time;
-  time = millis();
-  
-  display.setCursor(0, 0);
-  display.print(duration);
-  if (duration<10) {
-    display.print(F("  "));
-  } else if (duration < 100) {
-    display.print(F(" "));    
-  }
-  display.setCursor(0, 1);
-  display.print(counter);
-  if (counter>0) {
-    display.print(F(" "));    
-  }
-  if (abs(counter)<10) {
-    display.print(F("  "));
-  } else if (abs(counter) < 100) {
-    display.print(F(" "));    
-  }
-  
-  display.setCursor(0, 2);
-  display.print(car_inStation);
-  if (car_inStation>=0) {
-    display.print(F(" "));        
-  }
-
-  display.setCursor(0, 3);
-  display.print(car_beforeStation);
-  if (car_beforeStation>=0) {
-    display.print(F(" "));        
-  }
-}
 
 static byte uid[] = "\0\0\0\0\0\0\0"; // Buffer to store the returned UID
 static byte uidLength;                // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
@@ -239,5 +162,5 @@ void loop() {
 #ifdef DEBUG
   Serial.flush();
 #endif  
-  testprint(rotEnc.counter(), car_inStation, car_beforeStation);
+  display_status(rotEnc.counter(), car_inStation, car_beforeStation);
 }
