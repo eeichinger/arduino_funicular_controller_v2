@@ -61,6 +61,8 @@ void setup() {
   Serial.begin(115200);
   Serial.println(F("BEGIN"));
 
+  Serial.println(bit(4)|bit(5), BIN);
+  
   motor.forceStop(200); // stop the motor
 
   initRFIDReader(nfc_beforeStation, "BeforeStation", PN532_IRQ);
