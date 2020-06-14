@@ -5,6 +5,17 @@
 #define PIN_HALL2 5
 
 /**
+    Motor
+*/
+// give a name to the pins that we use
+const int speedPin = 6;    // that is the pin that we use to control the motor's speed
+const int forwardPin = 7; // this is the pin that we use to tell the motor to go forward
+const int reversePin = 8; // this is the pin that we use to tell the motor to go reverse
+
+L293 motor( speedPin, forwardPin, reversePin );
+
+
+/**
     Rotary Encoder sensing rope speed + dir
 */
 // create LegoHallRotEncoder
