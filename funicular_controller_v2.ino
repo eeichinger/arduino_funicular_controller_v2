@@ -8,10 +8,10 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_PN532.h>
 #include <L293.h>
-#include <LegoHallRotEncoder.h>
 
 #include "display.h"
 #include "nfc.h"
+#include "motor.h"
 
 #define DEBUG
 
@@ -42,9 +42,6 @@ L293 motor( speedPin, forwardPin, reversePin );
 #define PN532_SS_2   (10)
 #define PN532_IRQ_2   (3)
 
-const int PIN_HALL1 = 4;
-const int PIN_HALL2 = 5;
-
 const uint16_t carIds[2][2] = {
   { 0xC1F4, 0xC7F4 }, // car -1
   { 0xCCF5, 0xD2F5 } // car 1
@@ -56,31 +53,6 @@ const uint16_t carIds[2][2] = {
 // SCK = 13, MOSI = 11, MISO = 12.  The SS line can be any digital IO pin.
 Adafruit_PN532 nfc_beforeStation(PN532_SS);
 Adafruit_PN532 nfc_inStation(PN532_SS_2);
-
-/**
-    Rotary Encoder sensing rope speed + dir
-*/
-// create LegoHallRotEncoder
-LegoHallRotEncoder rotEnc = LegoHallRotEncoder(PIN_HALL1, PIN_HALL2);
-
-static void nothing(void) {
-}
-
-void (*cb)(void) = nothing;
-
-ISR(PCINT2_vect) {
-  cb();
-}
-
-static void myISR() {
-  static byte oldRotEncState = 0x0;
-  // see https://arduino.stackexchange.com/a/12958 how to handle pin change interrupts
-  byte newRotEncState = PIND & 0b00110000;  //(bit(4)|bit(5));
-  if (newRotEncState != oldRotEncState) {
-    LegoHallRotEncoder::rotenc_changed();
-  }
-  oldRotEncState = newRotEncState;
-}
 
 // the setup function runs once when you press reset or power the board
 void setup() {
@@ -94,13 +66,7 @@ void setup() {
   initRFIDReader(nfc_beforeStation, "BeforeStation", PN532_IRQ);
   initRFIDReader(nfc_inStation, "InStation", PN532_IRQ_2);
 
-  cb = myISR;
-
-  cli(); // disable interrupts
-  PCICR |= 0b00000100; // turn on pin change irq on port d
-  PCMSK2 |= 0b00110000;    // turn on pins PD4 & PD5, PCINT20 & PCINT21 (=Arduino pins D4, D5)
-  sei(); // reenable interrupts
-
+  motor_init();
   display_init();
   
   Serial.println(F("setup complete"));
