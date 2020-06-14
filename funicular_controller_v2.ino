@@ -15,16 +15,14 @@
 #define DEBUG
 
 /**
+  Start/Stop Button
+ */
+#define STARTSTOP_BTN A2
+
+/**
     DISPLAY
 */
-//#define SCREEN_WIDTH 128 // OLED display width, in pixels
-//#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-//#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-
 SSD1306AsciiAvrI2c display;
-//Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 
 /**
@@ -114,6 +112,8 @@ static uint32_t time = millis();
 
 // the setup function runs once when you press reset or power the board
 void setup() {
+  pinMode(STARTSTOP_BTN, INPUT_PULLUP);
+  
   Serial.begin(115200);
   Serial.println(F("BEGIN"));
 
@@ -215,6 +215,13 @@ int8_t detectCar(Adafruit_PN532& nfc) { // carid = -1, 0=no car, 1
 
 // the loop function runs over and over again forever
 void loop() {
+  uint8_t btnPressed = digitalRead(STARTSTOP_BTN);
+  if (btnPressed == 0) {
+#ifdef DEBUG
+    Serial.println("btnPressed=YES");
+#endif      
+  }
+  
   int8_t car_inStation = detectCar(nfc_inStation);
   if (car_inStation != 0) {
 #ifdef DEBUG
