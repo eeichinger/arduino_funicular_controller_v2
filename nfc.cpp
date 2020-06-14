@@ -64,7 +64,7 @@ extern int8_t nfc_detectCar(Adafruit_PN532& nfc) { // carid = -1, 0=no car, 1
 
   // fetch result if IRQ line indicates that there is one
   success = nfc.completeReadPassiveTargetID(uid, &uidLength);
-  int8_t car_id = 0;
+  int8_t car_id = CAR_NONE;
   if (success) {
     uint16_t curcar =  (uid[1] << 8) | uid[2];
 #ifdef DEBUG
@@ -73,10 +73,10 @@ extern int8_t nfc_detectCar(Adafruit_PN532& nfc) { // carid = -1, 0=no car, 1
     Serial.println("");
 #endif
     if ( carIds[0][0] == curcar || carIds[0][1] == curcar ) {
-      car_id = -1;
+      car_id = CAR_B;
     }
     if (carIds[1][0] == curcar || carIds[1][1] == curcar) {
-      car_id = 1;
+      car_id = CAR_A;
     }
     // put back into listening mode
     nfc.beginReadPassiveTargetID(PN532_MIFARE_ISO14443A);

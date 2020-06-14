@@ -14,9 +14,6 @@ const int speedPin = 6;    // that is the pin that we use to control the motor's
 const int forwardPin = 7; // this is the pin that we use to tell the motor to go forward
 const int reversePin = 8; // this is the pin that we use to tell the motor to go reverse
 
-L293 motor( speedPin, forwardPin, reversePin );
-
-
 /**
     Rotary Encoder: sensing rope movement, speed + dir
 */
@@ -48,10 +45,68 @@ static void rotenc_init() {
   cli(); // disable interrupts
   PCICR |= 0b00000100; // turn on pin change irq on port d
   PCMSK2 |= (bit(PIN_HALL1) | bit(PIN_HALL2));    // turn on pins PD4 & PD5, PCINT20 & PCINT21 (=Arduino pins D4, D5) // (bit(PIN_HALL1)|bit(PIN_HALL2));
-  sei(); // reenable interrupts  
+  sei(); // reenable interrupts
 }
 
 extern void motor_init() {
   rotenc_init();
-  motor.forceStop(200); // stop the motor  
+
+  pinMode( speedPin,  OUTPUT );
+  pinMode( forwardPin, OUTPUT );
+  pinMode( reversePin, OUTPUT );
+}
+
+
+int16_t currentSpeed = 0;
+
+extern void motor_reset() {
+  rotEnc.resetCounter();
+  motor_setspeed(0);
+}
+
+extern int16_t motor_speed() {
+  return currentSpeed;
+}
+
+extern void motor_setspeed(int16_t sp) {
+  int16_t speed = constrain(sp, -255, 255);
+#ifdef DEBUG
+  Serial.print(F("applying speed: ")); Serial.print(speed);
+#endif
+  if ( (speed < 0 && currentSpeed > 0)
+       ||   (speed > 0 && currentSpeed < 0)
+     ) {
+#ifdef DEBUG
+    Serial.print(F("; need to break first"));
+#endif
+    digitalWrite( reversePin, HIGH );
+    digitalWrite( forwardPin, HIGH );
+    delay(20);
+  }
+  currentSpeed = speed;
+  if (currentSpeed > 0) {
+#ifdef DEBUG
+    Serial.print(F("; forward:")); Serial.print(speed);
+#endif
+    digitalWrite( reversePin, LOW );
+    digitalWrite( forwardPin, HIGH );
+    analogWrite( speedPin , abs(currentSpeed) );
+  } else if (currentSpeed < 0) {
+#ifdef DEBUG
+    Serial.print(F("; reverse:")); Serial.print(speed);
+#endif
+    digitalWrite( reversePin, HIGH );
+    digitalWrite( forwardPin, LOW );
+    analogWrite( speedPin, abs(currentSpeed) );
+  } else {
+#ifdef DEBUG
+    Serial.print(F("; stop:")); Serial.print(speed);
+#endif
+    digitalWrite( reversePin, HIGH );
+    digitalWrite( forwardPin, HIGH );
+    analogWrite( speedPin , 0 );
+  }
+#ifdef DEBUG
+  Serial.println();
+#endif
 }

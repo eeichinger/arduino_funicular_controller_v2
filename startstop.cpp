@@ -12,10 +12,14 @@ void startstop_init() {
   pinMode(STARTSTOP_BTN, INPUT_PULLUP);
 }
 
+int lastState = 0;
+
 bool startstop_isButton_pressed() {
   uint8_t btnPressed = digitalRead(STARTSTOP_BTN);
-  if (btnPressed == 0) {
-    return true;
+  if (btnPressed==0 && lastState==0) {
+    // wait until it's released again    
+    return false;
   }
-  return false;
+  lastState = btnPressed;
+  return (btnPressed == 0);
 }

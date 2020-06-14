@@ -2,9 +2,10 @@
 #define DISPLAY_H
 
 #include <stdint.h>
+#include "state.h"
 
 extern void display_init();
 
-extern void display_status(bool startStopPressed, int counter, int8_t car_inStation, int8_t car_beforeStation);
+extern void display_status(StateContext &ctx);
 
 #endif
