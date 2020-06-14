@@ -1,6 +1,8 @@
 #include "motor.h"
 #include <Arduino.h>
 
+//#define DEBUG
+
 #define PIN_HALL1 4
 #define PIN_HALL2 5
 
@@ -16,7 +18,7 @@ L293 motor( speedPin, forwardPin, reversePin );
 
 
 /**
-    Rotary Encoder sensing rope speed + dir
+    Rotary Encoder: sensing rope movement, speed + dir
 */
 // create LegoHallRotEncoder
 LegoHallRotEncoder rotEnc = LegoHallRotEncoder(PIN_HALL1, PIN_HALL2);
@@ -40,11 +42,16 @@ static void myISR() {
   oldRotEncState = newRotEncState;
 }
 
-extern void motor_init() {
+static void rotenc_init() {
   cb = myISR;
 
   cli(); // disable interrupts
   PCICR |= 0b00000100; // turn on pin change irq on port d
   PCMSK2 |= (bit(PIN_HALL1) | bit(PIN_HALL2));    // turn on pins PD4 & PD5, PCINT20 & PCINT21 (=Arduino pins D4, D5) // (bit(PIN_HALL1)|bit(PIN_HALL2));
-  sei(); // reenable interrupts
+  sei(); // reenable interrupts  
+}
+
+extern void motor_init() {
+  rotenc_init();
+  motor.forceStop(200); // stop the motor  
 }
