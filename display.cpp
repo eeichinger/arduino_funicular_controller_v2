@@ -2,7 +2,7 @@
 #include <SSD1306Ascii.h>
 #include <SSD1306AsciiAvrI2c.h>
 
-#define DEBUG
+//#define DEBUG
 
 /**
     DISPLAY

@@ -1,7 +1,7 @@
 #include "startstop.h"
 #include <Arduino.h>
 
-#define DEBUG
+//#define DEBUG
 
 /**
   Start/Stop Button

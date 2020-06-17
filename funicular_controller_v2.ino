@@ -9,7 +9,7 @@
 #include "motor.h"
 #include "state.h"
 
-#define DEBUG
+//#define DEBUG
 
 const int MAX_SPEED = 150;
 
@@ -41,21 +41,23 @@ State handle_car_in_flight(StateContext &ctx) {
     return State::UNINITIALIZED;
   }
   int speed = motor_speed();
-  int dir = speed/abs(speed);
+  int dir = speed / abs(speed);
   if (ctx.car_inStation == -dir) {
     motor_setspeed(0);
     return State::CAR_IN_STATION;
   }
   if (ctx.car_beforeStation == -dir) {
-    motor_setspeed(MAX_SPEED/2 * dir);
+    motor_setspeed(MAX_SPEED / 2 * dir);
   }
   return ctx.state;
 }
 
 // the setup function runs once when you press reset or power the board
 void setup() {
+#ifdef DEBUG
   Serial.begin(115200);
   Serial.println(F("BEGIN"));
+#endif
 
   stateHandlers[State::UNINITIALIZED] = handle_uninitialized;
   stateHandlers[State::CAR_IN_FLIGHT] = handle_car_in_flight;
@@ -66,7 +68,9 @@ void setup() {
   motor_init();
   display_init();
 
+#ifdef DEBUG
   Serial.println(F("setup complete"));
+#endif
 }
 
 void readStateContext(StateContext &ctx) {
