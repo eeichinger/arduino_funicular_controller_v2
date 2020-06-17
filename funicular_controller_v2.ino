@@ -11,6 +11,8 @@
 
 //#define DEBUG
 
+void(* resetFunc) (void) = 0; //declare reset function at address 0
+
 const int MAX_SPEED = 150;
 
 State state;
@@ -88,4 +90,5 @@ void loop() {
   state = stateHandlers[ctx.state](ctx);
   display_status(ctx);
   delay(20);
+  // if (uptime > 24h) resetFunc(); //call reset 
 }
